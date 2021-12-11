@@ -14,37 +14,3 @@ browser.get('https://www.instagram.com/')
 time.sleep(5)
 
 
-def auth(browser):
-
-        input_login = browser.find_element(By.XPATH, '//*[@id="loginForm"]/div/div[1]/div/label/input')
-        input_pass = browser.find_element(By.XPATH, '//*[@id="loginForm"]/div/div[2]/div/label/input')
-
-        input_login.send_keys(user_name)
-        input_pass.send_keys(user_pass)
-
-        button_notification = browser.find_element(By.XPATH, '//*[@id="loginForm"]/div/div[3]/button/div')
-        button_notification.click()
-
-        time.sleep(5)
-        button_notification = browser.find_element(By.XPATH, '//*[@id="react-root"]/div/div/'
-                                                             'section/main/div/div/div/section/div/button')
-        button_notification.click()
-        time.sleep(4)
-
-
-auth(browser)
-
-button_login = browser.find_element(By.XPATH, '/html/body/div[5]/div/div/div/div[3]/button[1]')
-button_login.click()
-time.sleep(3)
-list_sub = browser.find_element(By.XPATH, '//*[@id="react-root"]/div/div/section/main/section/div/div/div')
-time.sleep(3)
-
-try:
-    browser.get('https://www.instagram.com/explore/people/')
-    Follow_Button = browser.find_element("//*[text()='Подписаться']")
-    Follow_Button.click()
-except:
-    pass
-
-time.sleep(5000)
