@@ -15,6 +15,12 @@ time.sleep(5)
 
 
 def set_up(path_html):
+    """
+    Принимает путь XPath элемента HTML
+    Возвращает объект(ссылку)
+    :param path_html:
+    :return:
+    """
     button_or_form = browser.find_element(By.XPATH, path_html)
     return button_or_form
 
