@@ -1,17 +1,10 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from global_set.settings import user_pass, user_name
 from selenium.webdriver.common.by import By
-from my_login import user_pass, user_name
+from global_set.global_set import get_browser
+import time
 
-s = Service(ChromeDriverManager().install())
 
-browser = webdriver.Chrome(service=s)
-browser.maximize_window()
-
-browser.get('https://www.instagram.com/')
-time.sleep(5)
+browser = get_browser()
 
 
 def set_up(path_html):
@@ -22,7 +15,12 @@ def set_up(path_html):
     :return:
     """
     button_or_form = browser.find_element(By.XPATH, path_html)
-    return button_or_form
+
+    if button_or_form:
+        return button_or_form
+
+    else:
+        set_up(path_html)
 
 
 def log_in():
@@ -46,5 +44,5 @@ def log_in():
         log_in()
 
 
-
+log_in()
 time.sleep(500)
