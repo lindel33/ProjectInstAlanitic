@@ -1,0 +1,18 @@
+# # Первое уведомление
+# time.sleep(4)
+# set_up('//*[@id="react-root"]/div/div/section/main/div/div/div/section/div/button').click()
+#
+# # Второе уведомление
+# time.sleep(4)
+# set_up('/html/body/div[6]/div/div/div/div[3]/button[1]').click()
+
+
+
+
+
+a = browser.find_element(By.CSS_SELECTOR, '#react-root > div > div > section > main'
+                                                  ' > div > div._2z6nI > article >'
+                                                  ' div:nth-child(1) > div').get_dom_attribute()
+
+
+        lnks = browser.find_elements(By.TAG_NAME, 'a')
