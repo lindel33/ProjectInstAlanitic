@@ -43,9 +43,10 @@ class LoginUser(ObjectMixin):
 
             # Кнопка войти
             time.sleep(1)
-            self.set_up('//*[@id="loginForm"]/div/div[3]').click()
+            xz = self.set_up('//*[@id="loginForm"]/div/div[3]').click()
+            print('xz', xz)
             return 0
-        except None:
+        except:
             count_error += 1
 
             # Чистка полей ввода
@@ -86,7 +87,7 @@ class Scrolling(ObjectMixin):
         :return:
         """
         time.sleep(2)
-        self.set_up('//*[@id="react-root"]/div/div/section/main/div/header/section/ul/li[2]/a').click()
+        self.set_up('//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a').click()
         time.sleep(2)
 
         number_scroll_local = 0
@@ -141,14 +142,49 @@ class UserInfo(ObjectMixin):
         return all_subscript
 
 
+class NewSubscribe(ObjectMixin):
+    def new_subscribe(self, my_list):
+        count = 0
+        for link in my_list:
+            browser.get(link)
+            close_or_open = self.check_close_account()
+
+
+            time.sleep(3)
+            browser.find_element(By.CLASS_NAME, 'sqdOP.L3NKy.y3zKF').click()
+            print('Нажата')
+            count += 1
+            if count == settings.time_wait_press_subscribe:
+                break
+
+    @staticmethod
+    def check_close_account():
+        """
+        Проверка открыт ли аккаунт
+        :return:
+        """
+        try:
+            browser.find_element(By.XPATH, '//*[@id="react-root"]/div/div/section/main/div/div/article/div[1]/div/h2')
+            return False
+
+        except:
+            return True
+
+
+
 login = LoginUser()
 login.log_in()
+
 post_user = UserInfo()
 z = post_user.get_posts_user('https://www.instagram.com/astrogks/')
 print(z)
+
 scroll = Scrolling()
 scroll.wait_scroll(settings.number_scroll_subscripts)
+
 x = post_user.get_subscript_links()
 print(x)
 
+sub = NewSubscribe()
+sub.new_subscribe(x)
 time.sleep(500)
