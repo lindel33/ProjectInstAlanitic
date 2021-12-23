@@ -67,14 +67,17 @@ class Scrolling(ObjectMixin):
         Функция пролистывания списка подписчиков
         :return:
         """
+        block_to_scroll_followers = '/html/body/div[6]/div/div/div[2]'
+        block_to_scroll_sub = '/html/body/div[6]/div/div/div[3]'
+        script = "arguments[0].scrollTop = arguments[0].scrollHeight"
         end_scroll = True
         try:
             time.sleep(2)
             try:
-                scr1 = self.get_xpath_object('/html/body/div[6]/div/div/div[2]')
+                scr1 = self.get_xpath_object(block_to_scroll_followers)
             except:
-                scr1 = self.get_xpath_object('/html/body/div[6]/div/div/div[3]')
-            browser.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", scr1)
+                scr1 = self.get_xpath_object(block_to_scroll_sub)
+            browser.execute_script(script, scr1)
             return 0
 
         except None:
@@ -127,10 +130,10 @@ class UserInfo(ObjectMixin):
         time.sleep(4)
 
         block_name = '//*[@id="react-root"]/section/main/div/header/section/div[1]/h2'
-        block_followrs = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a/span'
+        block_followers = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a/span'
 
         name_user = self.get_xpath_object(block_name).text
-        no_filter_followers = self.get_xpath_object(block_followrs).text
+        no_filter_followers = self.get_xpath_object(block_followers).text
 
         # Проверка на наличя слова тыс в кол-во подписчиков
         num_followers = []
@@ -158,10 +161,11 @@ class UserInfo(ObjectMixin):
             number_posts = self.get_xpath_object('//*[@id="react-root"]/section/main/'
                                                  'div/header/section/ul/li[2]/a/span').text
 
+        # Фильтрация кол-во подписок
         number_subscript = ''
         if ' ' in number_sub:
-            x = number_sub.split()
-            number_subscript = x[0] + x[1]
+            number = number_sub.split()
+            number_subscript = number[0] + number[1]
         else:
             number_subscript = number_sub
 
@@ -172,7 +176,12 @@ class UserInfo(ObjectMixin):
             post = el.find_element(By.TAG_NAME, 'a').get_attribute('href')
             posts_user.append(post)
 
-        data_return = [posts_user, name_user, num_followers[0], number_subscript, number_posts, url_user]
+        data_return = {'posts_user': str(posts_user),
+                       'name_user': str(name_user),
+                       'num_followers': str(num_followers[0]),
+                       'number_subscript': str(number_subscript),
+                       'number_posts': str(number_posts),
+                       'url_user': str(url_user)}
         return data_return
 
     def get_followers_links(self):
@@ -189,7 +198,7 @@ class UserInfo(ObjectMixin):
             post = follower.find_element(By.TAG_NAME, 'a').get_attribute('href')
             all_followers.append(post)
         self.get_xpath_object('/html/body/div[6]/div/div/div[1]/div/div[2]/button').click()
-        return all_followers
+        return str(all_followers)
 
     def get_subscript_links(self):
         """
@@ -215,7 +224,7 @@ class UserInfo(ObjectMixin):
 
             self.get_xpath_object('/html/body/div[6]/div/div/div[1]/div/div[2]/button').click()
 
-            return all_subscript
+            return str(all_subscript)
         else:
             pass
 
@@ -235,32 +244,30 @@ class UserInfo(ObjectMixin):
             all_subscripts_user = post_user.get_subscript_links()
 
             # Чистка 1 000 от пробела (подписчики)
-            clear_number = profile_info[4]
+            clear_number = profile_info['number_posts']
             if ' ' in clear_number:
-                clear_number = profile_info[4].split()
+                clear_number = profile_info['number_posts'].split()
                 clear_number = int(clear_number[0] + clear_number[1])
             date = str(datetime.date.today())
-            data = {'user_name': str(profile_info[1]),
-                    'user_link': profile_info[5],
+
+            data = {'user_name': profile_info['name_user'],
+                    'user_link': profile_info['url_user'],
                     'user_sub': all_subscripts_user,
-                    'user_followers': str(all_followers_user),
-                    'user_posts': str(profile_info[0]),
-                    'number_sub': str(profile_info[3]),
-                    'number_followers': str(profile_info[2]),
+                    'user_followers': all_followers_user,
+                    'user_posts': profile_info['posts_user'],
+                    'number_sub': profile_info['number_subscript'],
+                    'number_followers': profile_info['num_followers'],
                     'number_posts': clear_number,
                     'date_save': date,
                     'chek_profile': 1,
                     }
+
             return data
         except:
             return 404
 
 
-x = ['https://www.instagram.com/carlos_oficial.985/',
-     'https://www.instagram.com/tik.tok_usmonov407/',
-     'https://www.instagram.com/uzbek_2229/',
-     'https://www.instagram.com/erg.ashev06/',
-     'https://www.instagram.com/rasulovich_81/',
+x = [
      'https://www.instagram.com/musliman_05_05/',
      'https://www.instagram.com/simonashopska/',
      'https://www.instagram.com/kx_boburbek/',
