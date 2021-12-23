@@ -1,31 +1,19 @@
-from pprint import pprint
-
 import MySQLdb
-from serializers.serializer_db import serializer_data
+from global_set.settings import login_db, pass_db
 
-conn = MySQLdb.connect('localhost', 'root', 'I1QEvAR503', 'inst')
-cursor = conn.cursor()
+connect = MySQLdb.connect('localhost', login_db, pass_db, 'inst')
+cursor = connect.cursor()
 
 
-def add_new_profile():
-    # data = serializer_data()
-
-    # my = ["dsadas", 'adsads', 'dsadas', 'sadsaddasdas', 'dsadasdas', 2222, 22, 22]
-    my = {'user_name': "aaaaaa",
-          'user_link': 'aaaaaa',
-         'user_sub': 'aaaa',
-         'user_followers': 'sadsaddasdas',
-         'user_posts': 'dsadasdas',
-         'number_sub': 54444,
-         'number_followers': 333,
-         'number_posts': 132213}
-    sql = ("INSERT INTO user_prsssofiles (user_name,"
+def add_new_profile(data):
+    print(data)
+    sql = ("INSERT INTO user_profiles (user_name,"
            " user_link, user_sub, user_followers,"
            " user_posts, number_sub, number_followers, number_posts)"
-           " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    cursor.execute(sql, my)
-    conn.commit()
-# add_new_profile()
+           " VALUES (%(user_name)s, %(user_link)s, %(user_sub)s, %(user_followers)s, %(user_posts)s,"
+           " %(number_sub)s, %(number_followers)s, %(number_posts)s)")
+    cursor.execute(sql, data)
+    connect.commit()
 
 
 def create_table_profile():
@@ -42,11 +30,8 @@ def create_table_profile():
                'number_posts int,'
                'PRIMARY KEY (ID) );')
         cursor.execute(sql)
-        conn.commit()
+        connect.commit()
 
     except:
         pass
-# dsasdadsdasdssaddsdadsddasd
-add_new_profile()
-
-
+create_table_profile()
