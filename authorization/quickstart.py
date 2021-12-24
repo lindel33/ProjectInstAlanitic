@@ -1,5 +1,5 @@
 import datetime
-from DataBase.data import add_new_profile, get_column, check_ok
+from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok
 from global_set import settings
 from selenium.webdriver.common.by import By
 from global_set.global_set import get_browser
@@ -264,7 +264,8 @@ class UserInfo(ObjectMixin):
                     'number_followers': profile_info['num_followers'],
                     'number_posts': clear_number,
                     'date_save': date,
-                    'chek_profile': 1,
+                    'chek_profile': '1',
+                    'subscribe_ok': '1',
                     }
 
             return data
@@ -272,20 +273,45 @@ class UserInfo(ObjectMixin):
             return 404
 
 
+class NewSubscript(ObjectMixin):
+    def get_links_to_subscript(self):
+        data = get_column(name_column='user_link', sub_max=1_000, follower_max=1_000)
+        print(data)
+        for user_link in data:
+            try:
+
+                browser.get(user_link[1])
+                self.subscript_button()
+                subscribe_ok(user_link[0])
+                time.sleep(120)
+            except:
+                pass
+
+    def subscript_button(self):
+        try:
+            button_subscript = '//*[@id="react-root"]/section/main' \
+                               '/div/header/section/div[1]/div[1]/div/div/div/span/span[1]/button'
+            self.get_xpath_object(button_subscript).click()
+
+        except ValueError:
+            pass
+
+
 login = LoginUser()
 login.log_in()
+#
+# sub = NewSubscript()
+# sub.get_links_to_subscript()
 info = UserInfo()
 list_check_profile = []
 list_links = get_column()
-print(list_links)
+
 for link in list_links:
-    print('------------------------------------')
-    print(link)
+
     for profile in link[1]:
-        try:
-            result = UserInfo.get_dict_profile(profile)
-        except:
-            result = 404
+
+        result = UserInfo.get_dict_profile(profile)
+
         if result == 404:
             pass
         else:
@@ -293,7 +319,6 @@ for link in list_links:
     list_check_profile.append(link[0])
     check_ok(link[0])
 time.sleep(500)
-
 
 # class CheckUser(ObjectMixin):
 #     """
