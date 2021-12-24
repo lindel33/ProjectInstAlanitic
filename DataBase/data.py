@@ -1,5 +1,4 @@
 from ast import literal_eval
-from pprint import pprint
 import MySQLdb
 from global_set.settings import login_db, pass_db
 
@@ -8,16 +7,14 @@ cursor = connect.cursor()
 
 
 def add_new_profile(data):
-    try:
-        sql = ("INSERT INTO user_profiles (user_name,"
-               " user_link, user_sub, user_followers,"
-               " user_posts, number_sub, number_followers, number_posts, profile_check)"
-               " VALUES (%(user_name)s, %(user_link)s, %(user_sub)s, %(user_followers)s, %(user_posts)s,"
-               " %(number_sub)s, %(number_followers)s, %(number_posts)s), %(chek_profile)s")
-        cursor.execute(sql, data)
-        connect.commit()
-    except:
-        pass
+    sql = ("INSERT INTO user_profiles (user_name,"
+           " user_link, user_sub, user_followers,"
+           " user_posts, number_sub, number_followers, number_posts, profile_check, subscribe_ok)"
+           " VALUES (%(user_name)s, %(user_link)s, %(user_sub)s, %(user_followers)s, %(user_posts)s,"
+           " %(number_sub)s, %(number_followers)s, %(number_posts)s, 1, 1)")
+    cursor.execute(sql, data)
+    connect.commit()
+
 
 def get_all_info():
     """
@@ -54,12 +51,14 @@ def get_profile_value(value_1, value_2):
 
 def get_column(name_column='user_followers',
                sub_min=0, sub_max=10_000,
-               follower_min=0, follower_max=10_000):
+               follower_min=0, follower_max=10_000,
+               subscribe_ok=1):
 
     """
     sub_min=7500, sub_max=7590,
                follower_min=4360, follower_max=4375):
     Фильтрация таблицы user_profile
+    :param subscribe_ok: 1
     :param name_column: user_followers
     :param sub_min: 0
     :param sub_max: 10_000
@@ -74,30 +73,42 @@ def get_column(name_column='user_followers',
                    f"and number_sub < {sub_max} "
                    f"and number_followers > {follower_min} "
                    f"and number_followers < {follower_max} "
-                   f"and profile_check = 1"
+                   f"and profile_check = 1 "
+                   f"and subscribe_ok={subscribe_ok}"
 
                    )
     response_db = cursor.fetchall()
     result = []
 
-    # Создаем список [id пользователя,[Ссылки таблицы]]
-    for tuple_link in response_db:
-        id_user = tuple_link[0]
-        list_link = literal_eval(tuple_link[1])
-        result.append([id_user, list_link])
-
-    return result
+    if name_column == 'user_followers':
+        # Создаем список [id пользователя,[Ссылки таблицы]]
+        for tuple_link in response_db:
+            id_user = tuple_link[0]
+            list_link = literal_eval(tuple_link[1])
+            result.append([id_user, list_link])
+        return result
+    elif name_column == 'user_link':
+        for link in response_db:
+            result.append(list(link))
+        return result
+    else:
+        return response_db
 
 
 def check_ok(id_user):
     """
     Функция меняет значение profile_check на 0, то есть что профиль обработан
-    :param id_users:
+    :param id_user:
     :return:
     """
-    sql = (f"UPDATE user_profiles SET profile_check = 0 WHERE id = {id_user};")
+    sql = f"UPDATE user_profiles SET profile_check = 0 WHERE id = {id_user};"
     cursor.execute(sql)
     connect.commit()
-    print('+++++++++++++++++++')
-    print('commit')
-    print('+++++++++++++++++++')
+
+
+def subscribe_ok(id_user):
+    sql = f"UPDATE user_profiles SET subscribe_ok = 0 WHERE id = {id_user};"
+    cursor.execute(sql)
+    connect.commit()
+
+
