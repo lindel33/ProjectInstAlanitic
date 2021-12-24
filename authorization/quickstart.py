@@ -1,5 +1,5 @@
 import datetime
-from DataBase.data import add_new_profile
+from DataBase.data import add_new_profile, get_column, check_ok
 from global_set import settings
 from selenium.webdriver.common.by import By
 from global_set.global_set import get_browser
@@ -128,61 +128,63 @@ class UserInfo(ObjectMixin):
 
         browser.get(url_user)
         time.sleep(4)
-
-        block_name = '//*[@id="react-root"]/section/main/div/header/section/div[1]/h2'
-        block_followers = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a/span'
-
-        name_user = self.get_xpath_object(block_name).text
-        no_filter_followers = self.get_xpath_object(block_followers).text
-
-        # Проверка на наличя слова тыс в кол-во подписчиков
-        num_followers = []
-        if 'т' in no_filter_followers:
-            num_followers.append(no_filter_followers[0:3] + '000')
-
-        elif ' ' in no_filter_followers:
-            x = no_filter_followers.split()
-            res = x[0] + x[1]
-            num_followers.append(res)
-
-        else:
-            num_followers.append(no_filter_followers)
-
         try:
-            number_sub = self.get_xpath_object('//*[@id="react-root"]/section/main/'
-                                               'div/header/section/ul/li[3]/span/span').text
+            block_name = '//*[@id="react-root"]/section/main/div/header/section/div[1]/h2'
+            block_followers = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a/span'
+
+            name_user = self.get_xpath_object(block_name).text
+            no_filter_followers = self.get_xpath_object(block_followers).text
+
+            # Проверка на наличя слова тыс в кол-во подписчиков
+            num_followers = []
+            if 'т' in no_filter_followers:
+                num_followers.append(no_filter_followers[0:3] + '000')
+
+            elif ' ' in no_filter_followers:
+                x = no_filter_followers.split()
+                res = x[0] + x[1]
+                num_followers.append(res)
+
+            else:
+                num_followers.append(no_filter_followers)
+
+            try:
+                number_sub = self.get_xpath_object('//*[@id="react-root"]/section/main/'
+                                                   'div/header/section/ul/li[3]/span/span').text
+            except:
+                number_sub = self.get_xpath_object('//*[@id="react-root"]/section/main/'
+                                                   'div/header/section/ul/li[3]/a/span').text
+            try:
+                number_posts = self.get_xpath_object('//*[@id="react-root"]/section/main/'
+                                                     'div/header/section/ul/li[1]/span/span').text
+            except:
+                number_posts = self.get_xpath_object('//*[@id="react-root"]/section/main/'
+                                                     'div/header/section/ul/li[2]/a/span').text
+
+            # Фильтрация кол-во подписок
+            number_subscript = ''
+            if ' ' in number_sub:
+                number = number_sub.split()
+                number_subscript = number[0] + number[1]
+            else:
+                number_subscript = number_sub
+
+            # Получение списка постов(ссылки)
+            links = browser.find_elements(By.CLASS_NAME, 'v1Nh3.kIKUG._bz0w')
+            posts_user = []
+            for el in links:
+                post = el.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                posts_user.append(post)
+
+            data_return = {'posts_user': str(posts_user),
+                           'name_user': str(name_user),
+                           'num_followers': str(num_followers[0]),
+                           'number_subscript': str(number_subscript),
+                           'number_posts': str(number_posts),
+                           'url_user': str(url_user)}
+            return data_return
         except:
-            number_sub = self.get_xpath_object('//*[@id="react-root"]/section/main/'
-                                               'div/header/section/ul/li[3]/a/span').text
-        try:
-            number_posts = self.get_xpath_object('//*[@id="react-root"]/section/main/'
-                                                 'div/header/section/ul/li[1]/span/span').text
-        except:
-            number_posts = self.get_xpath_object('//*[@id="react-root"]/section/main/'
-                                                 'div/header/section/ul/li[2]/a/span').text
-
-        # Фильтрация кол-во подписок
-        number_subscript = ''
-        if ' ' in number_sub:
-            number = number_sub.split()
-            number_subscript = number[0] + number[1]
-        else:
-            number_subscript = number_sub
-
-        # Получение списка постов(ссылки)
-        links = browser.find_elements(By.CLASS_NAME, 'v1Nh3.kIKUG._bz0w')
-        posts_user = []
-        for el in links:
-            post = el.find_element(By.TAG_NAME, 'a').get_attribute('href')
-            posts_user.append(post)
-
-        data_return = {'posts_user': str(posts_user),
-                       'name_user': str(name_user),
-                       'num_followers': str(num_followers[0]),
-                       'number_subscript': str(number_subscript),
-                       'number_posts': str(number_posts),
-                       'url_user': str(url_user)}
-        return data_return
+            return 404
 
     def get_followers_links(self):
         """
@@ -230,20 +232,23 @@ class UserInfo(ObjectMixin):
 
     @staticmethod
     def get_dict_profile(url_user):
+        post_user = UserInfo()
+        scroll = Scrolling()
+        xpath_follower_window = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a'
+        xpath_subscript_window = '//*[@id="react-root"]/section/main/div/header/section/ul/li[3]/a'
         try:
-            post_user = UserInfo()
+
             profile_info = post_user.get_info_user(url_user)
 
-            scroll = Scrolling()
-            scroll.wait_scroll(settings.number_scroll_subscripts, '//*[@id="react-root"]'
-                                                                  '/section/main/div/header/section/ul/li[2]/a')
+            scroll.wait_scroll(settings.number_scroll_followers, xpath_follower_window)
             all_followers_user = post_user.get_followers_links()
 
-            scroll.wait_scroll(settings.number_scroll_subscripts, '//*[@id="react-root"]'
-                                                                  '/section/main/div/header/section/ul/li[3]/a')
+            scroll.wait_scroll(settings.number_scroll_subscripts, xpath_subscript_window)
             all_subscripts_user = post_user.get_subscript_links()
 
             # Чистка 1 000 от пробела (подписчики)
+            if profile_info == 404:
+                return 404
             clear_number = profile_info['number_posts']
             if ' ' in clear_number:
                 clear_number = profile_info['number_posts'].split()
@@ -263,40 +268,39 @@ class UserInfo(ObjectMixin):
                     }
 
             return data
-        except:
+        except AttributeError:
             return 404
 
 
-x = [
-     'https://www.instagram.com/musliman_05_05/',
-     'https://www.instagram.com/simonashopska/',
-     'https://www.instagram.com/kx_boburbek/',
-     'https://www.instagram.com/javoxir_9070/',
-     'https://www.instagram.com/moaeyed.mohammed/',
-     'https://www.instagram.com/asilkingo7/',
-     'https://www.instagram.com/_vlad_nedviga_/']
-
 login = LoginUser()
 login.log_in()
-
 info = UserInfo()
-for i in x:
-    result = UserInfo.get_dict_profile(i)
-    if result == 404:
-        pass
-    else:
-        add_new_profile(result)
-# sub = NewSubscribe()
-# sub.new_subscribe(x)
+list_check_profile = []
+list_links = get_column()
+print(list_links)
+for link in list_links:
+    print('------------------------------------')
+    print(link)
+    for profile in link[1]:
+        try:
+            result = UserInfo.get_dict_profile(profile)
+        except:
+            result = 404
+        if result == 404:
+            pass
+        else:
+            add_new_profile(result)
+    list_check_profile.append(link[0])
+    check_ok(link[0])
 time.sleep(500)
 
 
-class CheckUser(ObjectMixin):
-    """
-    Класс проверяет профили пользователей на ботов и магазины
-    """
-
-    @staticmethod
-    def get_info_profile():
-        data = 1
-        return data
+# class CheckUser(ObjectMixin):
+#     """
+#     Класс проверяет профили пользователей на ботов и магазины
+#     """
+#
+#     @staticmethod
+#     def get_info_profile():
+#         data = 1
+#         return data
