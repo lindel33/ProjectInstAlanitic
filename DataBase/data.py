@@ -1,3 +1,4 @@
+import datetime
 from ast import literal_eval
 import MySQLdb
 from global_set.settings import login_db, pass_db
@@ -112,3 +113,29 @@ def subscribe_ok(id_user):
     connect.commit()
 
 
+def to_wait(data):
+    """
+    Запись в таблицу ожидания к отписке
+    :return:
+    """
+    sql = ("INSERT INTO wait_to_unsubscribe (name_user, date_sub, date_unsub)"
+           " VALUES (%(name_user)s, %(date_sub)s, %(date_unsub)s)")
+    cursor.execute(sql, data)
+    connect.commit()
+
+
+def get_to_unsubscribe():
+    today = str(datetime.date.today())
+    print(today)
+    sql = (f"select id, name_user from wait_to_unsubscribe where date_unsub = '{today}'")
+    cursor.execute(sql)
+    response_db = cursor.fetchall()
+    return response_db
+
+def delete_subscript(id_user):
+    sql = f"DELETE FROM wait_to_unsubscribe WHERE id = {id_user}"
+    cursor.execute(sql)
+    connect.commit()
+
+
+get_to_unsubscribe()
