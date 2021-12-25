@@ -1,7 +1,5 @@
 import datetime
-from ast import literal_eval
-
-from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok, to_wait, get_to_unsubscribe, \
+from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok, to_wait, get_to_unsubscribe,\
     delete_subscript
 from global_set import settings
 from selenium.webdriver.common.by import By
@@ -165,7 +163,7 @@ class UserInfo(ObjectMixin):
                                                      'div/header/section/ul/li[2]/a/span').text
 
             # Фильтрация кол-во подписок
-            number_subscript = ''
+
             if ' ' in number_sub:
                 number = number_sub.split()
                 number_subscript = number[0] + number[1]
@@ -276,6 +274,7 @@ class NewSubscript(ObjectMixin):
     """
     Класс подписки на пользователей из БД
     """
+
     def get_links_to_subscript(self):
         """
         Подписка на пользователей
@@ -317,7 +316,8 @@ class NewSubscript(ObjectMixin):
         except ValueError:
             pass
 
-    def delete_sub(self):
+    @staticmethod
+    def delete_sub():
         response_db = get_to_unsubscribe()
         time.sleep(2)
         print('wait')
@@ -333,11 +333,12 @@ class NewSubscript(ObjectMixin):
                 time.sleep(1)
                 browser.find_element(By.CLASS_NAME, 'aOOlW.-Cab_').click()
                 time.sleep(2)
+                print('Туты ------------')
                 delete_subscript(link[0])
                 print('120 сек. ожидание после отписки')
 
                 tim = 0
-                for i in range(0,120):
+                for i in range(0, 120):
                     time.sleep(1)
                     tim += 1
                     if tim % 10 == 0:
@@ -345,6 +346,7 @@ class NewSubscript(ObjectMixin):
                 init.new_subs()
             except:
                 print(link[0], 'не удалось')
+
 
 class CheckUser(ObjectMixin):
     """

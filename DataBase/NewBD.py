@@ -36,3 +36,6 @@ def create_table_wait_unsubscribe():
            "primary key(id))")
     cursor.execute(sql)
     connect.commit()
+
+
+

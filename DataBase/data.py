@@ -127,10 +127,11 @@ def to_wait(data):
 def get_to_unsubscribe():
     today = str(datetime.date.today())
     print(today)
-    sql = (f"select id, name_user from wait_to_unsubscribe where date_unsub = '{today}'")
+    sql = f"select id, name_user from wait_to_unsubscribe where date_unsub = '{today}'"
     cursor.execute(sql)
     response_db = cursor.fetchall()
     return response_db
+
 
 def delete_subscript(id_user):
     sql = f"DELETE FROM wait_to_unsubscribe WHERE id = {id_user}"
