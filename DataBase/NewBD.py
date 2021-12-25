@@ -17,6 +17,8 @@ def create_table_profile():
                'number_sub int,'
                'number_followers int,'
                'number_posts int,'
+               'profile_check int,'
+               'subscribe_ok int,'
                'PRIMARY KEY (ID) );')
         cursor.execute(sql)
         connect.commit()
