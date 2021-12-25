@@ -1,5 +1,8 @@
 import datetime
-from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok
+from ast import literal_eval
+
+from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok, to_wait, get_to_unsubscribe, \
+    delete_subscript
 from global_set import settings
 from selenium.webdriver.common.by import By
 from global_set.global_set import get_browser
@@ -253,7 +256,6 @@ class UserInfo(ObjectMixin):
             if ' ' in clear_number:
                 clear_number = profile_info['number_posts'].split()
                 clear_number = int(clear_number[0] + clear_number[1])
-            date = str(datetime.date.today())
 
             data = {'user_name': profile_info['name_user'],
                     'user_link': profile_info['url_user'],
@@ -263,9 +265,6 @@ class UserInfo(ObjectMixin):
                     'number_sub': profile_info['number_subscript'],
                     'number_followers': profile_info['num_followers'],
                     'number_posts': clear_number,
-                    'date_save': date,
-                    'chek_profile': '1',
-                    'subscribe_ok': '1',
                     }
 
             return data
@@ -274,20 +273,42 @@ class UserInfo(ObjectMixin):
 
 
 class NewSubscript(ObjectMixin):
+    """
+    Класс подписки на пользователей из БД
+    """
     def get_links_to_subscript(self):
+        """
+        Подписка на пользователей
+        :return:
+        """
         data = get_column(name_column='user_link', sub_max=1_000, follower_max=1_000)
-        print(data)
         for user_link in data:
-            try:
+            print(user_link)
 
+            try:
                 browser.get(user_link[1])
-                self.subscript_button()
+                self.__subscript_button()
                 subscribe_ok(user_link[0])
-                time.sleep(120)
+                today = datetime.date.today()
+                tomorrow = today + datetime.timedelta(days=1)
+                data = {'name_user': user_link[1],
+                        'date_sub': datetime.date.today(),
+                        'date_unsub': tomorrow}
+
+                to_wait(data)
+                print('120 сек. ожидание после подписки')
+
+                tim = 0
+                for i in range(0, 120):
+                    time.sleep(1)
+                    tim += 1
+                    if tim % 10 == 0:
+                        print('Прошло', tim, ' из 120')
             except:
                 pass
 
-    def subscript_button(self):
+    def __subscript_button(self):
+
         try:
             button_subscript = '//*[@id="react-root"]/section/main' \
                                '/div/header/section/div[1]/div[1]/div/div/div/span/span[1]/button'
@@ -296,36 +317,75 @@ class NewSubscript(ObjectMixin):
         except ValueError:
             pass
 
+    def delete_sub(self):
+        response_db = get_to_unsubscribe()
+        time.sleep(2)
+        print('wait')
+        for link in response_db:
 
-login = LoginUser()
-login.log_in()
-#
-# sub = NewSubscript()
-# sub.get_links_to_subscript()
-info = UserInfo()
-list_check_profile = []
-list_links = get_column()
+            link = list(link)
+            print(link)
+            try:
+                browser.get(link[1])
+                time.sleep(2)
+                browser.find_element(By.CLASS_NAME, '_5f5mN.-fzfL._6VtSN.yZn4P').click()
 
-for link in list_links:
+                time.sleep(1)
+                browser.find_element(By.CLASS_NAME, 'aOOlW.-Cab_').click()
+                time.sleep(2)
+                delete_subscript(link[0])
+                print('120 сек. ожидание после отписки')
 
-    for profile in link[1]:
+                tim = 0
+                for i in range(0,120):
+                    time.sleep(1)
+                    tim += 1
+                    if tim % 10 == 0:
+                        print('Прошло', tim, ' из 120')
+                init.new_subs()
+            except:
+                print(link[0], 'не удалось')
 
-        result = UserInfo.get_dict_profile(profile)
+class CheckUser(ObjectMixin):
+    """
+    Класс проверяет профили пользователей на ботов и магазины
+    """
 
-        if result == 404:
-            pass
-        else:
-            add_new_profile(result)
-    list_check_profile.append(link[0])
-    check_ok(link[0])
+    @staticmethod
+    def get_info_profile():
+        data = 1
+        return data
+
+
+class InitProgram:
+    list_check_profile = []
+    list_links = get_column()
+
+    def __init__(self):
+        self.login = LoginUser()
+        self.login.log_in()
+        self.info = UserInfo()
+        self.sub = NewSubscript()
+
+    def check_profiles(self):
+        for link in self.list_links:
+            for profile in link[1]:
+                try:
+                    result = UserInfo.get_dict_profile(profile)
+                except:
+                    result = 404
+
+                if result == 404:
+                    pass
+                else:
+                    add_new_profile(result)
+            self.list_check_profile.append(link[0])
+            check_ok(link[0])
+
+    def new_subs(self):
+        self.sub.get_links_to_subscript()
+
+
+init = InitProgram()
+init.sub.delete_sub()
 time.sleep(500)
-
-# class CheckUser(ObjectMixin):
-#     """
-#     Класс проверяет профили пользователей на ботов и магазины
-#     """
-#
-#     @staticmethod
-#     def get_info_profile():
-#         data = 1
-#         return data
