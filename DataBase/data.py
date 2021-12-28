@@ -8,6 +8,7 @@ cursor = connect.cursor()
 
 
 def add_new_profile(data):
+    print('data')
     sql = ("INSERT INTO user_profiles (user_name,"
            " user_link, user_sub, user_followers,"
            " user_posts, number_sub, number_followers, number_posts, profile_check, subscribe_ok)"
@@ -15,6 +16,7 @@ def add_new_profile(data):
            " %(number_sub)s, %(number_followers)s, %(number_posts)s, 1, 1)")
     cursor.execute(sql, data)
     connect.commit()
+    print('save')
 
 
 def get_all_info():
@@ -53,13 +55,14 @@ def get_profile_value(value_1, value_2):
 def get_column(name_column='user_followers',
                sub_min=0, sub_max=10_000,
                follower_min=0, follower_max=10_000,
-               subscribe_ok=1):
+               subscript_ok=1, profile_check=1):
 
     """
     sub_min=7500, sub_max=7590,
                follower_min=4360, follower_max=4375):
     Фильтрация таблицы user_profile
-    :param subscribe_ok: 1
+    :param profile_check: 1
+    :param subscript_ok: 1
     :param name_column: user_followers
     :param sub_min: 0
     :param sub_max: 10_000
@@ -74,8 +77,8 @@ def get_column(name_column='user_followers',
                    f"and number_sub < {sub_max} "
                    f"and number_followers > {follower_min} "
                    f"and number_followers < {follower_max} "
-                   f"and profile_check = 1 "
-                   f"and subscribe_ok={subscribe_ok}"
+                   f"and profile_check = {profile_check} "
+                   f"and subscribe_ok={subscript_ok}"
 
                    )
     response_db = cursor.fetchall()
@@ -127,7 +130,7 @@ def to_wait(data):
 def get_to_unsubscribe():
     today = str(datetime.date.today())
     print(today)
-    sql = f"select id, name_user from wait_to_unsubscribe where date_unsub = '{today}'"
+    sql = f"select id, name_user from wait_to_unsubscribe where date_unsub < '{today}'"
     cursor.execute(sql)
     response_db = cursor.fetchall()
     return response_db
@@ -139,4 +142,4 @@ def delete_subscript(id_user):
     connect.commit()
 
 
-get_to_unsubscribe()
+
