@@ -116,7 +116,7 @@ def subscribe_ok(id_user):
     connect.commit()
 
 
-def to_wait(data):
+def wait_list_unsub(data):
     """
     Запись в таблицу ожидания к отписке
     :return:
