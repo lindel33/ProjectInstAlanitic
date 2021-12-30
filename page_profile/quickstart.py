@@ -1,16 +1,10 @@
 import datetime
-import time
-
-from selenium.webdriver.common.by import By
-
+from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok, to_wait, get_to_unsubscribe,\
+    delete_subscript
 from global_set import settings
+from selenium.webdriver.common.by import By
 from global_set.global_set import get_browser
-from delay_time import time_wait
-from DataBase.data import (add_new_profile, get_column,
-                           check_ok, subscribe_ok,
-                           to_wait, get_to_unsubscribe,
-                           delete_subscript)
-
+import time
 
 browser = get_browser()
 
@@ -74,12 +68,16 @@ class Scrolling(ObjectMixin):
         Функция пролистывания списка подписчиков
         :return:
         """
-        block = browser.find_element(By.CSS_SELECTOR, 'body > div.RnEpo.Yx5HN > div > div > div.isgrP')
+        block_to_scroll_followers = '/html/body/div[6]/div/div/div[2]'
+        block_to_scroll_sub = '/html/body/div[6]/div/div/div[3]'
         script = "arguments[0].scrollTop = arguments[0].scrollHeight"
         end_scroll = True
         try:
             time.sleep(2)
-            scr1 = self.get_xpath_object(block)
+            try:
+                scr1 = self.get_xpath_object(block_to_scroll_followers)
+            except:
+                scr1 = self.get_xpath_object(block_to_scroll_sub)
             browser.execute_script(script, scr1)
             return 0
 
@@ -103,18 +101,18 @@ class Scrolling(ObjectMixin):
 
             number_scroll_local = 0
             count = 0
-            time_wait_scroll = 0
+            time_wait = 0
             end = True
             while end:
                 number_scroll_local += 1
 
                 exit_count = self.scroll()
                 count += int(exit_count)
-                if time_wait_scroll == 10:
+                if time_wait == 10:
                     time.sleep(3)
                 if count == 3 or number_scroll_local == number_to_scroll:
                     break
-                time_wait_scroll += 1
+                time_wait += 1
         except:
             return 0
 
@@ -282,7 +280,7 @@ class NewSubscript(ObjectMixin):
         Подписка на пользователей
         :return:
         """
-        data = get_column(name_column='user_link', sub_max=1_000, follower_max=1_000, profile_check=0)
+        data = get_column(name_column='user_link', sub_max=1_000, follower_max=1_000)
         for user_link in data:
             print(user_link)
 
@@ -297,7 +295,14 @@ class NewSubscript(ObjectMixin):
                         'date_unsub': tomorrow}
 
                 to_wait(data)
-                time_wait()
+                print('120 сек. ожидание после подписки')
+
+                tim = 0
+                for i in range(0, 120):
+                    time.sleep(1)
+                    tim += 1
+                    if tim % 10 == 0:
+                        print('Прошло', tim, ' из 120')
             except:
                 pass
 
@@ -315,6 +320,7 @@ class NewSubscript(ObjectMixin):
     def delete_sub():
         response_db = get_to_unsubscribe()
         time.sleep(2)
+        print('wait')
         for link in response_db:
 
             link = list(link)
@@ -327,12 +333,30 @@ class NewSubscript(ObjectMixin):
                 time.sleep(1)
                 browser.find_element(By.CLASS_NAME, 'aOOlW.-Cab_').click()
                 time.sleep(2)
+                print('Туты ------------')
                 delete_subscript(link[0])
+                print('120 сек. ожидание после отписки')
 
-                time_wait()
+                tim = 0
+                for i in range(0, 120):
+                    time.sleep(1)
+                    tim += 1
+                    if tim % 10 == 0:
+                        print('Прошло', tim, ' из 120')
                 init.new_subs()
             except:
                 print(link[0], 'не удалось')
+
+
+class CheckUser(ObjectMixin):
+    """
+    Класс проверяет профили пользователей на ботов и магазины
+    """
+
+    @staticmethod
+    def get_info_profile():
+        data = 1
+        return data
 
 
 class InitProgram:
@@ -347,9 +371,7 @@ class InitProgram:
 
     def check_profiles(self):
         for link in self.list_links:
-            print(link)
             for profile in link[1]:
-                print(profile)
                 try:
                     result = UserInfo.get_dict_profile(profile)
                 except:
