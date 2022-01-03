@@ -1,10 +1,16 @@
 import datetime
-from DataBase.data import add_new_profile, get_column, check_ok, subscribe_ok, to_wait, get_to_unsubscribe,\
-    delete_subscript
-from global_set import settings
-from selenium.webdriver.common.by import By
-from global_set.global_set import get_browser
 import time
+
+from selenium.common.exceptions import NoSuchElementException, InvalidElementStateException
+from selenium.webdriver.common.by import By
+
+from DataBase.data import (add_new_profile, get_column,
+                           check_ok, subscribe_ok,
+                           wait_list_unsub, get_to_unsubscribe,
+                           delete_subscript)
+from global_set import settings
+from global_set.global_set import get_browser
+from delay_time import daley_press
 
 browser = get_browser()
 
@@ -38,55 +44,58 @@ class LoginUser(ObjectMixin):
         form_pass = '//*[@id="loginForm"]/div/div[2]/div/label/input'
         button_login = '//*[@id="loginForm"]/div/div[3]'
 
-        count_error = 0
+        next_page_url = 'https://www.instagram.com/accounts/onetap/?next=%2F'
 
+        count_auth = 1
         time.sleep(2)
-        try:
 
-            self.get_xpath_object(form_login).send_keys(settings.user_name)
-            self.get_xpath_object(form_pass).send_keys(settings.user_pass)
-            self.get_xpath_object(button_login).click()
-            time.sleep(4)
-            return 0
+        while browser.current_url != next_page_url:
+            print('Попытка авторизации: ', count_auth)
+            count_auth += 1
+            try:
+                time.sleep(settings.wait_open_new_page)
 
-        except NameError:
-            count_error += 1
+                self.get_xpath_object(form_login).clear()
+                self.get_xpath_object(form_pass).clear()
 
-            self.get_xpath_object(form_login).clear()
-            self.get_xpath_object(form_pass).clear()
+                time.sleep(2)
 
-            self.log_in()
+                self.get_xpath_object(form_login).send_keys(settings.user_name)
+                self.get_xpath_object(form_pass).send_keys(settings.user_pass)
+                self.get_xpath_object(button_login).click()
 
-            if count_error == 5:
-                print('5 ошибок аторизации')
-                return 1
+                time.sleep(settings.wait_open_new_page)
+
+            except NoSuchElementException:
+                pass
+
+        print('Авторизация прошла успешно!')
+        return 0
 
 
 class Scrolling(ObjectMixin):
-    def scroll(self):
+    def __scroll(self):
         """
         Функция пролистывания списка подписчиков
         :return:
         """
-        block_to_scroll_followers = '/html/body/div[6]/div/div/div[2]'
-        block_to_scroll_sub = '/html/body/div[6]/div/div/div[3]'
+
+        block_to_scroll = browser.find_element(By.CLASS_NAME, 'isgrP')
         script = "arguments[0].scrollTop = arguments[0].scrollHeight"
+
         end_scroll = True
         try:
             time.sleep(2)
-            try:
-                scr1 = self.get_xpath_object(block_to_scroll_followers)
-            except:
-                scr1 = self.get_xpath_object(block_to_scroll_sub)
-            browser.execute_script(script, scr1)
+
+            browser.execute_script(script, block_to_scroll)
             return 0
 
-        except None:
+        except NoSuchElementException:
             if not end_scroll:
                 return 1
             else:
                 time.sleep(5)
-                self.scroll()
+                self.__scroll()
             return 0.5
 
     def wait_scroll(self, number_to_scroll, button):
@@ -106,7 +115,7 @@ class Scrolling(ObjectMixin):
             while end:
                 number_scroll_local += 1
 
-                exit_count = self.scroll()
+                exit_count = self.__scroll()
                 count += int(exit_count)
                 if time_wait == 10:
                     time.sleep(3)
@@ -118,16 +127,17 @@ class Scrolling(ObjectMixin):
 
 
 class UserInfo(ObjectMixin):
+    def __init__(self, url_user):
+        self.url_user = url_user
 
-    def get_info_user(self, url_user):
+    def get_info_user(self):
         """
-        Функция возвращает список данных на посты пользователя
-        :param url_user:
+        Функция возвращает информацию со страницы профиля
         :return data_return = [posts_user, name_user, num_followers[0], number_sub, number_posts]
                             [Список постов, ник, кол-во подписчиков, кол-во подписок, кол-во постов]
         """
 
-        browser.get(url_user)
+        browser.get(self.url_user)
         time.sleep(4)
         try:
             block_name = '//*[@id="react-root"]/section/main/div/header/section/div[1]/h2'
@@ -163,31 +173,35 @@ class UserInfo(ObjectMixin):
                                                      'div/header/section/ul/li[2]/a/span').text
 
             # Фильтрация кол-во подписок
-
             if ' ' in number_sub:
                 number = number_sub.split()
                 number_subscript = number[0] + number[1]
             else:
                 number_subscript = number_sub
 
-            # Получение списка постов(ссылки)
-            links = browser.find_elements(By.CLASS_NAME, 'v1Nh3.kIKUG._bz0w')
-            posts_user = []
-            for el in links:
-                post = el.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                posts_user.append(post)
-
+            posts_user = self.__get_user_posts()
             data_return = {'posts_user': str(posts_user),
                            'name_user': str(name_user),
                            'num_followers': str(num_followers[0]),
                            'number_subscript': str(number_subscript),
                            'number_posts': str(number_posts),
-                           'url_user': str(url_user)}
+                           'url_user': str(self.url_user)}
+
             return data_return
         except:
             return 404
 
-    def get_followers_links(self):
+    @staticmethod
+    def __get_user_posts():
+        # Получение списка постов(ссылки)
+        links = browser.find_elements(By.CLASS_NAME, 'v1Nh3.kIKUG._bz0w')
+        posts_user = []
+        for el in links:
+            post = el.find_element(By.TAG_NAME, 'a').get_attribute('href')
+            posts_user.append(post)
+        return posts_user
+
+    def __get_followers_links(self):
         """
         Получение списка ссылок на подписчиков пользователя
         :return: all_followers
@@ -203,7 +217,7 @@ class UserInfo(ObjectMixin):
         self.get_xpath_object('/html/body/div[6]/div/div/div[1]/div/div[2]/button').click()
         return str(all_followers)
 
-    def get_subscript_links(self):
+    def __get_subscript_links(self):
         """
         Получение списка ссылок на подписки пользователя
         :return: all_sub
@@ -231,21 +245,19 @@ class UserInfo(ObjectMixin):
         else:
             pass
 
-    @staticmethod
-    def get_dict_profile(url_user):
-        post_user = UserInfo()
+    def get_dict_profile(self):
         scroll = Scrolling()
         xpath_follower_window = '//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a'
         xpath_subscript_window = '//*[@id="react-root"]/section/main/div/header/section/ul/li[3]/a'
-        try:
 
-            profile_info = post_user.get_info_user(url_user)
+        try:
+            profile_info = self.get_info_user()
 
             scroll.wait_scroll(settings.number_scroll_followers, xpath_follower_window)
-            all_followers_user = post_user.get_followers_links()
+            all_followers_user = self.__get_followers_links()
 
             scroll.wait_scroll(settings.number_scroll_subscripts, xpath_subscript_window)
-            all_subscripts_user = post_user.get_subscript_links()
+            all_subscripts_user = self.__get_subscript_links()
 
             # Чистка 1 000 от пробела (подписчики)
             if profile_info == 404:
@@ -266,16 +278,16 @@ class UserInfo(ObjectMixin):
                     }
 
             return data
-        except AttributeError:
+        except InvalidElementStateException:
             return 404
 
 
 class NewSubscript(ObjectMixin):
     """
-    Класс подписки на пользователей из БД
+    Удаление/Подписка на пользователей
     """
 
-    def get_links_to_subscript(self):
+    def new_subscript(self):
         """
         Подписка на пользователей
         :return:
@@ -294,69 +306,44 @@ class NewSubscript(ObjectMixin):
                         'date_sub': datetime.date.today(),
                         'date_unsub': tomorrow}
 
-                to_wait(data)
-                print('120 сек. ожидание после подписки')
-
-                tim = 0
-                for i in range(0, 120):
-                    time.sleep(1)
-                    tim += 1
-                    if tim % 10 == 0:
-                        print('Прошло', tim, ' из 120')
+                wait_list_unsub(data)
+                daley_press('ожидание после подписки')
             except:
                 pass
 
     def __subscript_button(self):
-
         try:
             button_subscript = '//*[@id="react-root"]/section/main' \
                                '/div/header/section/div[1]/div[1]/div/div/div/span/span[1]/button'
             self.get_xpath_object(button_subscript).click()
-
-        except ValueError:
+        except NoSuchElementException:
             pass
 
     @staticmethod
     def delete_sub():
         response_db = get_to_unsubscribe()
         time.sleep(2)
-        print('wait')
-        for link in response_db:
 
+        # link = ['id', 'url-профиля']
+        for link in response_db:
             link = list(link)
             print(link)
             try:
                 browser.get(link[1])
-                time.sleep(2)
-                browser.find_element(By.CLASS_NAME, '_5f5mN.-fzfL._6VtSN.yZn4P').click()
+                time.sleep(settings.wait_open_new_page)
 
+                button_unsubscribe = '_5f5mN.-fzfL._6VtSN.yZn4P'
+                browser.find_element(By.CLASS_NAME, button_unsubscribe).click()
                 time.sleep(1)
-                browser.find_element(By.CLASS_NAME, 'aOOlW.-Cab_').click()
-                time.sleep(2)
-                print('Туты ------------')
-                delete_subscript(link[0])
-                print('120 сек. ожидание после отписки')
 
-                tim = 0
-                for i in range(0, 120):
-                    time.sleep(1)
-                    tim += 1
-                    if tim % 10 == 0:
-                        print('Прошло', tim, ' из 120')
-                init.new_subs()
+                button_unsubscribe_ok = 'aOOlW.-Cab_'
+                browser.find_element(By.CLASS_NAME, button_unsubscribe_ok).click()
+
+                delete_subscript(link[0])
+                wait_list_unsub('Ожидание после отписки')
+
             except:
                 print(link[0], 'не удалось')
-
-
-class CheckUser(ObjectMixin):
-    """
-    Класс проверяет профили пользователей на ботов и магазины
-    """
-
-    @staticmethod
-    def get_info_profile():
-        data = 1
-        return data
 
 
 class InitProgram:
@@ -366,28 +353,28 @@ class InitProgram:
     def __init__(self):
         self.login = LoginUser()
         self.login.log_in()
-        self.info = UserInfo()
         self.sub = NewSubscript()
 
     def check_profiles(self):
         for link in self.list_links:
             for profile in link[1]:
                 try:
-                    result = UserInfo.get_dict_profile(profile)
+                    profile_user = UserInfo(profile)
+                    profile_user = profile_user.get_dict_profile()
                 except:
-                    result = 404
+                    profile_user = 404
 
-                if result == 404:
+                if profile_user == 404:
                     pass
                 else:
-                    add_new_profile(result)
+                    add_new_profile(profile_user)
             self.list_check_profile.append(link[0])
             check_ok(link[0])
 
     def new_subs(self):
-        self.sub.get_links_to_subscript()
+        self.sub.new_subscript()
 
 
 init = InitProgram()
-init.sub.delete_sub()
+init.sub.new_subscript()
 time.sleep(500)
