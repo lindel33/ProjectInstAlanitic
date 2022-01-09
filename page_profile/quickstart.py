@@ -114,13 +114,14 @@ class Scrolling(ObjectMixin):
             end = True
             while end:
                 number_scroll_local += 1
+                count += int(self.__scroll())
 
-                exit_count = self.__scroll()
-                count += int(exit_count)
                 if time_wait == 10:
                     time.sleep(3)
+
                 if count == 3 or number_scroll_local == number_to_scroll:
                     break
+
                 time_wait += 1
         except:
             return 0
